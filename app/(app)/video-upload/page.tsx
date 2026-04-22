@@ -1,97 +1,113 @@
-import React,{useState} from 'react'
-import axios from 'axios'
-import { useRouter } from 'next/router'
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { NextResponse } from 'next/server';
+"use client"
 
-function videoUpload(){
-  const [file,setFile] = useState<File|null>(null)
-  const [title,setTitle] = useState("")
-  const [description,setDescription] = useState("")
-  const [isUploading,setIsUploading] = useState(false)
+import React, { useState } from "react"
+import axios from "axios"
+import { useRouter } from "next/navigation"
+import { ToastContainer, toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
+
+const VideoUpload = () => {
+  const [file, setFile] = useState<File | null>(null)
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [isUploading, setIsUploading] = useState(false)
 
   const router = useRouter()
 
-  //max file size of 60 mb
-  const MAX_FILE_SIZE = 70*1024*1024
+  // max file size: 70MB
+  const MAX_FILE_SIZE = 70 * 1024 * 1024
 
-  const handleSubmit = async(event:React.FormEvent) => {
-    event.preventDefault()
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
 
-    if(!file) return
-
-    if(file.size>MAX_FILE_SIZE){
-      toast.error("File size too large. Please upload a smaller file.", {
-      position: "top-right",
-    });
-    return;
+    if (!file) {
+      toast.error("Please select a video file")
+      return
     }
+
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("File size too large (Max: 70MB)")
+      return
+    }
+
     setIsUploading(true)
-    const formData = new FormData();
-    formData.append("file",file)
-    formData.append("title",title)
-    formData.append("description",description)
-    formData.append("originalSize",file.size.toString())
+
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("title", title)
+    formData.append("description", description)
+    formData.append("originalSize", file.size.toString())
 
     try {
-      const response = await axios.post("/api/video-upload",formData);
-      return NextResponse.json({message:"Video uploaded sucessfully"},{status:200})
+      await axios.post("/api/video-upload", formData)
+
+      toast.success("Video uploaded successfully 🎉")
+
+      // optional redirect
+      router.push("/")
     } catch (error) {
-      console.log(error);
-      
-    }
-    finally{
+      console.error(error)
+      toast.error("Upload failed ❌")
+    } finally {
       setIsUploading(false)
     }
-      
-    
-
   }
   return (
-     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Upload Video</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+  <div className="min-h-screen bg-black flex items-start justify-center py-10 px-4">
+    <div className="w-full max-w-4xl">
+      <ToastContainer />
+
+      <h1 className="text-4xl font-bold text-white mb-8">Upload Video</h1>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Title */}
         <div>
-          <label className="label">
-            <span className="label-text">Title</span>
-          </label>
+          <label className="block text-sm text-gray-300 mb-2">Title</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="input input-bordered w-full"
+            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
         </div>
+
+        {/* Description */}
         <div>
-          <label className="label">
-            <span className="label-text">Description</span>
-          </label>
+          <label className="block text-sm text-gray-300 mb-2">Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="textarea textarea-bordered w-full"
+            rows={4}
+            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
         </div>
+
+        {/* File */}
         <div>
-          <label className="label">
-            <span className="label-text">Video File</span>
-          </label>
+          <label className="block text-sm text-gray-300 mb-2">Video File</label>
           <input
             type="file"
-            accept='video/*'
-            onChange={(e)=>setFile(e.target.files?.[0]||null)}
-            className="file-input file-input-bordered w-full"
+            accept="video/*"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            className="file-input w-full bg-slate-900 border border-slate-700 text-white"
             required
           />
         </div>
-          <button type="submit" className="btn btn-primary" disabled={isUploading}>{isUploading ? "Uploading..." : "Upload Video "}</button>
-       
+
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={isUploading}
+          className="px-6 py-3 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-medium transition"
+        >
+          {isUploading ? "Uploading..." : "Upload Video"}
+        </button>
       </form>
     </div>
-  )
+  </div>
+)
 }
 
-export default videoUpload
+export default VideoUpload
